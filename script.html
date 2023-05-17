@@ -1,0 +1,201 @@
+<!-- Top.Mail.Ru counter -->
+...
+<!-- /Top.Mail.Ru counter -->
+
+<script type="text/javascript">
+    /* Настройки */
+    var PIXEL_ID = "XXXXXXXXX"; // Id счетчика VK
+    var CONSOLE_DEBUG = false; // Нужна ли отладка в консоли: true -да, false - нет
+
+    /* Глобальные переменные */
+    var productData = new Object; // Объект с информацией о товаре
+    
+    /* Вызовы функций */
+    window.onload = checkProduct(); // Запускаем функцию проверки страницы продукта при запуске
+
+    /* Обработчики запуска функции оформления заказа */
+    var buttonPurchase1 = document.querySelector('#bx-soa-orderSave a'); // Уникальный селектор кнопки оформления заказа 1
+    if (buttonPurchase1) { // Если кнопка оформления заказа 1 существует
+        buttonPurchase1.addEventListener('mousedown', reachGoalPurchase); // Запускаем функцию отправки цели при нажатии на нее
+    }
+    var buttonPurchase2 = document.querySelector('#bx-soa-total .bx-soa-cart-total .bx-soa-cart-total-button-container a'); // Уникальный селектор кнопки оформления заказа 1
+    if (buttonPurchase2) { // Если кнопка оформления заказа 1 существует
+        buttonPurchase2.addEventListener('mousedown', reachGoalPurchase); // При нажатии запускаем функцию отправки события покупки
+    }
+    /* Функции */
+    function checkProduct() { // Функция проверки страницы продукта
+        var checkProductProductPage = document.querySelector("#catalogElement"); // Уникальный селектор для страницы продукта
+        if (CONSOLE_DEBUG) {
+            console.log("checkProductProductPage:");
+            console.log(checkProductProductPage);
+        }
+        if (checkProductProductPage) { // Если уникальный селектор для страницы продукта существует
+            var checkProductProductCart = document.querySelectorAll(".addCart.changeID.changeQty.changeCart") // Селектор корзины
+            if (checkProductProductCart) { // Если селектор для корзины существует
+                if (CONSOLE_DEBUG) {
+                    console.log("checkProductProductCart:");
+                    console.log(checkProductProductCart);
+                }
+                getProduct(checkProductProductCart[0], productData["id"], productData["value"]); // Запускаем функцию получения продукта, в которую передаем первый селектор корзины, а также идентификатор и цену товара
+                if (CONSOLE_DEBUG) {
+                    console.log("productData");
+                    console.log(productData);
+                }
+                setInterval(function() { // Раз в 5 секунд
+                    if (CONSOLE_DEBUG) {
+                        console.log("");
+                        console.log("setInterval");
+                    }
+                    getProduct(checkProductProductCart[0], productData["id"], productData["value"]); // Запускаем функцию получения продукта, в которую передаем селектор корзины, а также идентификатор и цену товара
+                    if (CONSOLE_DEBUG) {
+                        console.log("productData");
+                        console.log(productData);
+                    }
+                }, 5000);
+                for(var i = 0; i < checkProductProductCart.length; i++) { // Для каждой кнопки добавления в корзины
+                    var checkCart = checkProductProductCart[i];
+                    if (CONSOLE_DEBUG) {
+                        console.log("checkCart: " + i);
+                        console.log(checkCart);
+                    }
+                    checkCart.addEventListener('mousedown', function() {
+                        reachGoalAddToCart(productData);
+                    }); // При нажатии запускаем функцию отправки события добавления в корзину
+                }
+                var checkProductAddWishList = document.querySelector(".wishCompWrap .addWishlist"); // Уникальный селектор для кнопки добавления в избранное
+                if (checkProductAddWishList) { // Если селектор для избранного существует
+                    checkProductAddWishList.addEventListener('mousedown', function() { // При нажатии на кнопку добавления в избранное
+                        reachGoalAddToWishlist(productData); // Запускаем функцию отправки события покупки, в которую передаем объект с информацией о товаре
+                    });
+                }
+            }
+        }
+    }
+    function getProduct(getProductProductCart, getProductProductId, getProductProductValue) { // Функция получения продукта
+        if (CONSOLE_DEBUG) {
+            console.log("");
+            console.log("function getProduct()");
+            console.log("getProductProductId: " + getProductProductId)
+        }
+        var getProductProductIdNew = getProductProductCart.dataset.id; // Получить новый Id продукта из данных кнопки корзины
+        if (CONSOLE_DEBUG) {console.log("getProductProductIdNew: " + getProductProductIdNew);}
+        if (getProductProductId !== getProductProductIdNew) { // Если Id продукта не равен новому Id продукта
+            if (CONSOLE_DEBUG) {
+                console.log("getProductProductId changed!");
+                console.log("getProductProductIdNew: " + getProductProductIdNew);
+            }
+            getProductProductValue = getProductPrice(); // Запускаем функцию получения цены продукта
+            productData["id"] = getProductProductIdNew; // Записываем новый Id продукта в объект с информацией о товаре
+            productData["value"] = getProductProductValue; // Записываем новую цену продукта в объект с информацией о товаре
+            if (CONSOLE_DEBUG) {
+                console.log("new productData");
+                console.log(productData);
+            }
+            reachGoalViewProduct(productData); // Запускаем функцию отправки события просмотра карточки товара
+        } else {
+            if (CONSOLE_DEBUG) {console.log("newProductId not changed!");}
+        }
+    }
+    function getProductPrice() { // Функция получения цены продукта
+        if (CONSOLE_DEBUG) {
+            console.log("");
+            console.log("function getProductPrice();")
+        }
+        var getProductPriceSelector = document.querySelector('.priceVal'); // Уникальный селектор для цены продукта
+        if (CONSOLE_DEBUG) {
+            console.log("getProductPriceSelector:"); 
+            console.log(getProductPriceSelector);
+        }
+        if (getProductPriceSelector) { // Если уникальный селектор для цены продукта существует
+            getProductPriceValue = getProductPriceSelector.innerHTML; // Получаем цену товара
+            getProductPriceValue = getProductPriceValue.replace('руб.',''); // Убираем строку '.руб.'
+            getProductPriceValue = getProductPriceValue.replace(/[^0-9\.]/g, ''); // Убираем из цены все лишнее, кроме цифр и точки
+            if (CONSOLE_DEBUG) {console.log("getProductPriceValue: " + getProductPriceValue);}
+            return getProductPriceValue; // Возвращаем цену товара
+        }
+    }
+    function reachGoalViewProduct(reachGoalViewProductProductData) { // Функция достижения цели Просмотр карточки товара
+        if (CONSOLE_DEBUG) {
+            console.log("");
+            console.log("function reachGoalViewProduct");
+            console.log("value: " + reachGoalViewProductProductData["value"]);
+            console.log("product_id: " + reachGoalViewProductProductData["id"]);
+        }
+        _tmr.push({
+            type: "reachGoal",
+            id: PIXEL_ID,
+            value: reachGoalViewProductProductData["value"],
+            goal: "viewProduct",
+            params: {
+                product_id: reachGoalViewProductProductData["id"]
+            }
+        }); // Отправляем достижение цели в VK 
+    }
+    function reachGoalAddToCart(reachGoalAddToCartProductData) { // Функция достижения цели Добавление в корзину
+        if (CONSOLE_DEBUG) {
+            console.log("");
+            console.log("function reachGoalAddToCart();");
+            console.log("value: " + reachGoalAddToCartProductData["value"]);
+            console.log("product_id: " + reachGoalAddToCartProductData["id"]);
+        }
+        _tmr.push({
+            type: "reachGoal",
+            id: PIXEL_ID,
+            value: reachGoalAddToCartProductData["value"],
+            goal: "addToCart",
+            params: {
+                product_id: reachGoalAddToCartProductData["id"]
+            }
+        }); // Отправляем достижение цели в VK 
+    }
+    function reachGoalAddToWishlist(reachGoalAddToWishlistProductData) { // Функция достижения цели Добавление в избранное
+        if (CONSOLE_DEBUG) {
+            console.log("");
+            console.log("function reachGoalAddToWishlist();");
+            console.log("value: " + reachGoalAddToWishlistProductData["value"]);
+            console.log("product_id: " + reachGoalAddToWishlistProductData["id"]);
+        }
+        _tmr.push({
+            type: "reachGoal",
+            id: PIXEL_ID,
+            value: reachGoalAddToWishlistProductData["value"],
+            goal: "addToWishlist",
+            params: {
+                product_id: reachGoalAddToWishlistProductData["id"]
+            }
+        }); // Отправляем достижение цели в VK 
+    }
+    function reachGoalPurchase(){ // Функция достижения цели Покупка
+        var reachGoalPurchaseProducts = document.querySelectorAll('#bx-soa-basket .bx-soa-item-title a'); // Получаем список элементов товаров
+        var reachGoalPurchaseProductsId = new Array();
+            for(var i = 0; i < reachGoalPurchaseProducts.length; i++){ // Для каждого элемента в списке товаров
+                var queryPurchaseProductID = reachGoalPurchaseProducts[i].getAttribute('href').split('offerID=')[1]; // Получаем данные после параметра ?offer= из URL.
+                if (queryPurchaseProductID !== undefined) { // Если в запросе параметр ?offer=
+                    queryPurchaseProductID = queryPurchaseProductID.split('&')[0]; // Чистим от других параметров
+                    queryPurchaseProductID = queryPurchaseProductID.split('#')[0]; // Чистим от якорей
+                    reachGoalPurchaseProductsId.push(queryPurchaseProductID); // Получаем идентификаторы товаров.
+                }
+            }
+            if (CONSOLE_DEBUG) {
+                console.log("reachGoalPurchaseProductsId");
+                console.log(reachGoalPurchaseProductsId);
+            }
+        var reachGoalPurchasePrice = document.querySelector('#bx-soa-total .bx-soa-cart-total-line-total .bx-soa-cart-d').innerHTML; // Получаем цену. Нужно заполнить селектор и метод получения значения
+        reachGoalPurchasePrice = reachGoalPurchasePrice.replace('руб.',''); // Убираем строку 'руб.'
+        reachGoalPurchasePrice = reachGoalPurchasePrice.replace(/[^0-9\.]/g, ''); // Убираем из цены все лишнее, кроме цифр и точки
+        if (CONSOLE_DEBUG) {
+            console.log("reachGoalPurchasePrice");
+            console.log(reachGoalPurchasePrice);
+        }
+        // Отправляем достижение цели в ВК
+        _tmr.push({
+            type: "reachGoal",
+            id: PIXEL_ID,
+            value: reachGoalPurchasePrice,
+            goal: "purchase",
+            params: {
+                product_id: queryPurchaseProductID
+            }
+        });
+    }
+</script>
